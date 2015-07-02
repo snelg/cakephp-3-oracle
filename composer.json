@@ -1,0 +1,24 @@
+
+{
+    "name": "snelg/cakephp-3-oracle",
+    "description": "Oracle datasource for CakePHP 3",
+    "license": "MIT",
+    "require": {
+        "ext-oci8": "*"
+    },
+    "require-dev": {
+        "cakephp/cakephp": "~3.0",
+        "psr/log": "~1.0",
+        "phpunit/phpunit": "~4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Cake\\Oracle\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Cake\\Oracle\\Test\\": "tests"
+        }
+    }
+}
