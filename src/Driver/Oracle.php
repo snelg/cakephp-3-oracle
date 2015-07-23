@@ -3,7 +3,6 @@ namespace Cake\Oracle\Driver;
 
 use Cake\Oracle\Statement\OracleStatement;
 use Cake\Oracle\Statement\Oci8Statement;
-use Cake\Oracle\OracleCompiler;
 use Cake\Oracle\Schema\OracleSchema;
 use Cake\Oracle\Dialect\OracleDialectTrait;
 use Cake\Database\Driver;
@@ -11,7 +10,6 @@ use Cake\Database\Driver\PDODriverTrait;
 use Cake\Database\Statement\PDOStatement;
 use Cake\ORM\Query;
 use yajra\Pdo\Oci8;
-use yajra\Pdo\Oci8\Exceptions\Oci8Exception;
 use PDO;
 
 class Oracle extends Driver
@@ -81,31 +79,63 @@ class Oracle extends Driver
     public function prepare($query)
     {
         $this->connect();
-        $isObject = $query instanceof Query;
-        $queryString = $isObject ? $query->sql() : $query;
+        $isObject = ($query instanceof Query) || ($query instanceof \Cake\Database\Query);
+        $queryStringRaw = $isObject ? $query->sql() : $query;
+        $queryString = $this->_fromDualIfy($queryStringRaw);
         $yajraStatement = $this->_connection->prepare($queryString);
         $oci8Statement = new Oci8Statement($yajraStatement); //Need to override some un-implemented methods in yajra Oci8 "Statement" class
         $statement = new OracleStatement(new PDOStatement($oci8Statement, $this), $this); //And now wrap in a Cake-ified, bufferable Statement
-        $statement->queryString = $queryString; //Oci8PDO does not correctly set read-only $queryString property, so we have a manual override
+        $statement->queryString = $queryStringRaw; //Oci8PDO does not correctly set read-only $queryString property, so we have a manual override
         if ($isObject && $query->bufferResults() === false) {
             $statement->bufferResults(false);
         }
         return $statement;
     }
 
-    public function newCompiler()
+    protected function _fromDualIfy($queryString)
     {
-        return new OracleCompiler;
+        $statement = strtolower(trim($queryString));
+        if (strpos($statement, 'select') !== 0 || preg_match('/ from /', $statement)) {
+            return $queryString;
+        }
+        //Doing a SELECT without a FROM (e.g. "SELECT 1 + 1") does not work in Oracle:
+        //need to have "FROM DUAL" at the end
+        return "{$queryString} FROM DUAL";
     }
 
     public function disableForeignKeySQL()
     {
-        throw new Oci8Exception("disableForeignKeySQL has not been implemented");
+        return $this->_foreignKeySQL('disable');
     }
 
     public function enableForeignKeySQL()
     {
-        throw new Oci8Exception("enableForeignKeySQL has not been implemented");
+        return $this->_foreignKeySQL('enable');
     }
 
+    protected function _foreignKeySQL($enableDisable)
+    {
+        $startQuote = $this->_startQuote;
+        $endQuote = $this->_endQuote;
+        if (!empty($this->_config['schema'])) {
+            $schemaName = strtoupper($this->_config['schema']);
+            $fromWhere = "from sys.all_constraints
+                where owner = '{$schemaName}' and constraint_type = 'R'";
+        } else {
+            $fromWhere = "from sys.user_constraints
+                where constraint_type = 'R'";
+        }
+        return "declare
+            cursor c is select owner, table_name, constraint_name
+                {$fromWhere};
+            begin
+                for r in c loop
+                    execute immediate 'alter table "
+                    . "{$startQuote}' || r.owner || '{$endQuote}."
+                    . "{$startQuote}' || r.table_name || '{$endQuote} "
+                    . "{$enableDisable} constraint "
+                    . "{$startQuote}' || r.constraint_name || '{$endQuote}';
+                end loop;
+            end;";
+    }
 }

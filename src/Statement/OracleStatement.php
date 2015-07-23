@@ -57,4 +57,35 @@ class OracleStatement extends StatementDecorator
             return empty($this->queryString) ? $this->_statement->queryString : $this->queryString;
         }
     }
+
+    /**
+     * Override default StatementDecorator, because yajra indexes anonymous
+     * params starting at offset 0, not 1
+     *
+     * @param array $params list of values to be bound
+     * @param array $types list of types to be used, keys should match those in $params
+     * @return void
+     */
+    public function bind($params, $types)
+    {
+        if (empty($params)) {
+            return;
+        }
+
+        $annonymousParams = is_int(key($params)) ? true : false;
+
+        //This line shoud be the only difference from StatementDecorator:
+        $offset = 0;
+
+        foreach ($params as $index => $value) {
+            $type = null;
+            if (isset($types[$index])) {
+                $type = $types[$index];
+            }
+            if ($annonymousParams) {
+                $index += $offset;
+            }
+            $this->bindValue($index, $value, $type);
+        }
+    }
 }

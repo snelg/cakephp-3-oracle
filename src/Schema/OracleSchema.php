@@ -26,7 +26,8 @@ class OracleSchema extends BaseSchema
                 ':bindOwner' => $schema]];
     }
 
-    public function describeIndexSql($tableName, $config) {
+    public function describeIndexSql($tableName, $config)
+    {
         list($table, $schema) = $this->_tableSplit($tableName, $config);
         if (empty($schema)) {
             return [
@@ -48,7 +49,8 @@ class OracleSchema extends BaseSchema
                 ':bindOwner' => $schema]];
     }
 
-    public function describeForeignKeySql($tableName, $config) {
+    public function describeForeignKeySql($tableName, $config)
+    {
         list($table, $schema) = $this->_tableSplit($tableName, $config);
         if (empty($schema)) {
             return [
@@ -100,7 +102,8 @@ class OracleSchema extends BaseSchema
         $table->addColumn(strtolower($row['COLUMN_NAME']), $field);
     }
 
-    public function convertIndexDescription(Table $table, $row) {
+    public function convertIndexDescription(Table $table, $row)
+    {
         $type = null;
         $columns = $length = [];
 
@@ -147,7 +150,8 @@ class OracleSchema extends BaseSchema
         }
     }
 
-    public function convertForeignKeyDescription(Table $table, $row) {
+    public function convertForeignKeyDescription(Table $table, $row)
+    {
         $data = [
             'type' => Table::CONSTRAINT_FOREIGN,
             'columns' => [strtolower($row['COLUMN_NAME'])],
@@ -159,40 +163,203 @@ class OracleSchema extends BaseSchema
         $table->addConstraint($name, $data);
     }
 
-    protected function _tableSplit($tableName, $config) {
+    protected function _tableSplit($tableName, $config)
+    {
         $schema = null;
         $table = strtoupper($tableName);
         if (strpos($tableName, '.') !== false) {
             $tableSplit = explode('.', $tableName);
-            $table = $tableSplit[1];
-            $schema = $tableSplit[0];
+            $table = strtoupper($tableSplit[1]);
+            $schema = strtoupper($tableSplit[0]);
         } elseif (!empty($config['schema'])) {
             $schema = strtoupper($config['schema']);
         }
         return [$table, $schema];
     }
 
-    public function columnSql(Table $table, $name) {
-        throw new Oci8Exception("columnSql has not been implemented");
+    public function columnSql(Table $table, $name)
+    {
+        $data = $table->column($name);
+        if ($this->_driver->autoQuoting()) {
+            $out = $this->_driver->quoteIdentifier($name);
+        } else {
+            $out = $name;
+        }
+        $typeMap = [
+            'integer' => ' NUMBER',
+            'float' => ' NUMBER',
+            'decimal' => ' NUMBER',
+            'text' => ' CLOB',
+            'datetime' => ' DATE',
+            'timestamp' => ' DATE'
+        ];
+        if (isset($typeMap[$data['type']])) {
+            $out .= $typeMap[$data['type']];
+        } else {
+            switch ($data['type']) {
+                case 'string':
+                    $out .= !empty($data['fixed']) ? ' CHAR' : ' VARCHAR';
+                    if (!isset($data['length'])) {
+                        $data['length'] = 255;
+                    }
+                    break;
+                default:
+                    throw new Oci8Exception("Column type {$data['type']} not yet implemented");
+            }
+        }
+
+        $hasLength = ['integer', 'string'];
+        if (in_array($data['type'], $hasLength, true) && isset($data['length'])) {
+            $out .= '(' . (int)$data['length'] . ')';
+        }
+
+        $hasPrecision = ['float', 'decimal'];
+        if (in_array($data['type'], $hasPrecision, true) &&
+            (isset($data['length']) || isset($data['precision']))
+        ) {
+            $out .= '(' . (int)$data['length'] . ',' . (int)$data['precision'] . ')';
+        }
+
+        if (isset($data['null']) && $data['null'] === false) {
+            $out .= ' NOT NULL';
+        }
+
+        if (isset($data['default'])) {
+            $out .= ' DEFAULT ' . $this->_driver->schemaValue($data['default']);
+        }
+
+        return $out;
     }
 
-    public function constraintSql(Table $table, $name) {
-        throw new Oci8Exception("constraintSql has not been implemented");
+    /**
+     * Helper method for generating key SQL snippets.
+     *
+     * @param string $prefix The key prefix
+     * @param array $data Key data.
+     * @return string
+     */
+    protected function _keySql($prefix, $data)
+    {
+        $columns = $data['columns'];
+        if ($this->_driver->autoQuoting()) {
+            $columns = array_map(
+                [$this->_driver, 'quoteIdentifier'],
+                $columns
+            );
+        }
+
+        if ($data['type'] === Table::CONSTRAINT_FOREIGN) {
+            $keyName = $data['references'][0];
+            if ($this->_driver->autoQuoting()) {
+                $keyName = $this->_driver->quoteIdentifier($keyName);
+            }
+            return $prefix . sprintf(
+                ' FOREIGN KEY (%s) REFERENCES %s (%s) ON DELETE %s',
+                implode(', ', $columns),
+                $keyName,
+                $this->_convertConstraintColumns($data['references'][1]),
+                $this->_foreignOnClause($data['delete'])
+            );
+        }
+        return $prefix . ' (' . implode(', ', $columns) . ')';
     }
 
-    public function createTableSql(Table $table, $columns, $constraints, $indexes) {
-        throw new Oci8Exception("createTableSql has not been implemented");
+    /**
+     * Convert foreign key constraints references to a valid
+     * stringified list (override to only use quoteIdentifier if autoQuoting is
+     * enabled)
+     *
+     * @param string|array $references The referenced columns of a foreign key constraint statement
+     * @return string
+     */
+    protected function _convertConstraintColumns($references)
+    {
+        if ($this->_driver->autoQuoting()) {
+            if (is_string($references)) {
+                return $this->_driver->quoteIdentifier($references);
+            }
+
+            return implode(', ', array_map(
+                [$this->_driver, 'quoteIdentifier'],
+                $references
+            ));
+        } else {
+            if (is_string($references)) {
+                return $references;
+            }
+            return implode(', ', $references);
+        }
     }
 
-    public function indexSql(Table $table, $name) {
+    /**
+     * {@inheritDoc}
+     */
+    public function constraintSql(Table $table, $name)
+    {
+        $data = $table->constraint($name);
+        if ($this->_driver->autoQuoting()) {
+            $out = 'CONSTRAINT ' . $this->_driver->quoteIdentifier($name);
+        } else {
+            $out = 'CONSTRAINT ' . $name;
+        }
+        if ($data['type'] === Table::CONSTRAINT_PRIMARY) {
+            $out = 'PRIMARY KEY';
+        }
+        if ($data['type'] === Table::CONSTRAINT_UNIQUE) {
+            $out .= ' UNIQUE';
+        }
+        return $this->_keySql($out, $data);
+    }
+
+    public function createTableSql(Table $table, $columns, $constraints, $indexes)
+    {
+        $content = array_merge($columns, $constraints);
+        $content = implode(",\n", array_filter($content));
+        $tableName = $table->name();
+        if ($this->_driver->autoQuoting()) {
+            $tableName = $this->_driver->quoteIdentifier($tableName);
+        }
+        $out = [sprintf("CREATE TABLE %s (\n%s\n)", $tableName, $content)];
+        foreach ($indexes as $index) {
+            $out[] = $index;
+        }
+        foreach ($table->columns() as $column) {
+            $columnData = $table->column($column);
+            if ($this->_driver->autoQuoting()) {
+                $column = $this->_driver->quoteIdentifier($column);
+            }
+            if (isset($columnData['comment'])) {
+                $out[] = sprintf(
+                    'COMMENT ON COLUMN %s.%s IS %s',
+                    $tableName,
+                    $column,
+                    $this->_driver->schemaValue($columnData['comment'])
+                );
+            }
+        }
+
+        return $out;
+    }
+
+    public function indexSql(Table $table, $name)
+    {
         throw new Oci8Exception("indexSql has not been implemented");
     }
 
-    public function listTablesSql($config) {
-        throw new Oci8Exception("listTablesSql has not been implemented");
+    public function listTablesSql($config)
+    {
+        if (empty($config['schema'])) {
+            return ['SELECT table_name FROM sys.user_tables', []];
+        }
+        return ['SELECT table_name FROM sys.all_tables WHERE owner = :bindOwner', [':bindOwner' => strtoupper($config['schema'])]];
     }
 
-    public function truncateTableSql(Table $table) {
-        throw new Oci8Exception("truncateTableSql has not been implemented");
+    public function truncateTableSql(Table $table)
+    {
+        $tableName = $table->name();
+        if ($this->_driver->autoQuoting()) {
+            $tableName = $this->_driver->quoteIdentifier($tableName);
+        }
+        return [sprintf("TRUNCATE TABLE %s", $tableName)];
     }
 }
