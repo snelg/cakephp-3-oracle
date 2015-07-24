@@ -59,11 +59,13 @@ class Oracle extends Driver
         }
         $config = $this->_config;
 
-        $config['init'][] = "ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'";
+        $config['init'][] = "ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS' NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SS' NLS_TIMESTAMP_TZ_FORMAT='YYYY-MM-DD HH24:MI:SS'";
 
         $config['flags'] += [
             PDO::ATTR_PERSISTENT => empty($config['persistent']) ? false : $config['persistent'],
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+			PDO::ATTR_ORACLE_NULLS => true,
+			PDO::NULL_EMPTY_STRING => true
         ];
 
         $this->_connect($config['database'], $config);
