@@ -75,10 +75,15 @@ class OracleSchema extends BaseSchema
     }
 
     public function convertColumnDescription(Table $table, $row)
-    {
+    {  
         switch($row['DATA_TYPE']) {
             case 'DATE':
                 $field = ['type' => 'datetime', 'length' => null];
+                break;
+			case 'TIMESTAMP':
+			case 'TIMESTAMP(6)':
+			case 'TIMESTAMP(9)':
+				$field = ['type' => 'timestamp', 'length' => null];
                 break;
             case 'NUMBER':
                 if ($row['DATA_PRECISION'] == 1) {
@@ -91,8 +96,19 @@ class OracleSchema extends BaseSchema
                     }
                 }
                 break;
+			case 'FLOAT':
+				$field = ['type' => 'decimal', 'length' => $row['DATA_PRECISION']];
+                break;
+			case 'CHAR':
             case 'VARCHAR2':
                 $field = ['type' => 'string', 'length' => $row['DATA_LENGTH']];
+                break;
+			case 'CLOB':
+                $field = ['type' => 'string', 'length' => $row['DATA_LENGTH']];
+                break;
+			case 'RAW':
+			case 'BLOB':
+                $field = ['type' => 'binary', 'length' => $row['DATA_LENGTH']];
                 break;
             default:
         }
@@ -187,11 +203,17 @@ class OracleSchema extends BaseSchema
         }
         $typeMap = [
             'integer' => ' NUMBER',
-            'float' => ' NUMBER',
+            'biginteger' => ' NUMBER',
+            'boolean' => ' NUMBER',
+            'binary' => ' BLOB',
+            'float' => ' FLOAT',
             'decimal' => ' NUMBER',
             'text' => ' CLOB',
+			'date' => ' DATE',
+            'time' => ' DATE',
             'datetime' => ' DATE',
-            'timestamp' => ' DATE'
+            'timestamp' => ' TIMESTAMP(6)',
+            'uuid' => ' VARCHAR2(36)',
         ];
         if (isset($typeMap[$data['type']])) {
             $out .= $typeMap[$data['type']];
