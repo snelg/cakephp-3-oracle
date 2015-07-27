@@ -64,8 +64,8 @@ class Oracle extends Driver
         $config['flags'] += [
             PDO::ATTR_PERSISTENT => empty($config['persistent']) ? false : $config['persistent'],
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-			PDO::ATTR_ORACLE_NULLS => true,
-			PDO::NULL_EMPTY_STRING => true
+            PDO::ATTR_ORACLE_NULLS => true,
+            PDO::NULL_EMPTY_STRING => true
         ];
 
         $this->_connect($config['database'], $config);

@@ -40,10 +40,10 @@ class OracleSchema extends BaseSchema
         }
         return [
             'SELECT cc.table_name, cc.column_name, cc.constraint_name, c.constraint_type, i.index_name, i.uniqueness '
-			. 'FROM all_cons_columns cc '
-			. 'LEFT JOIN all_indexes i ON(i.index_name  = cc.constraint_name AND cc.owner = i.owner) '
-			. 'LEFT JOIN all_constraints c ON(c.constraint_name = cc.constraint_name AND c.owner = cc.owner) '
-			. 'WHERE cc.table_name = :bindTable '
+            . 'FROM all_cons_columns cc '
+            . 'LEFT JOIN all_indexes i ON(i.index_name  = cc.constraint_name AND cc.owner = i.owner) '
+            . 'LEFT JOIN all_constraints c ON(c.constraint_name = cc.constraint_name AND c.owner = cc.owner) '
+            . 'WHERE cc.table_name = :bindTable '
             . 'AND cc.owner = :bindOwner', [
                 ':bindTable' => $table,
                 ':bindOwner' => $schema]];
@@ -64,10 +64,10 @@ class OracleSchema extends BaseSchema
         }
         return [
             'SELECT cc.column_name, cc.constraint_name, r.owner AS REFERENCED_OWNER, r.table_name AS REFERENCED_TABLE_NAME, r.column_name AS REFERENCED_COLUMN_NAME, c.delete_rule '
-			. 'FROM all_cons_columns cc '
-			. 'JOIN all_constraints c ON(c.constraint_name = cc.constraint_name AND c.owner = cc.owner) '
-			. 'JOIN all_cons_columns r ON(r.constraint_name = c.r_constraint_name AND r.owner = c.r_owner) '
-			. "WHERE c.constraint_type = 'R' "
+            . 'FROM all_cons_columns cc '
+            . 'JOIN all_constraints c ON(c.constraint_name = cc.constraint_name AND c.owner = cc.owner) '
+            . 'JOIN all_cons_columns r ON(r.constraint_name = c.r_constraint_name AND r.owner = c.r_owner) '
+            . "WHERE c.constraint_type = 'R' "
             . 'AND cc.table_name = :bindTable '
             . 'AND cc.owner = :bindOwner', [
                 ':bindTable' => $table,
@@ -75,15 +75,15 @@ class OracleSchema extends BaseSchema
     }
 
     public function convertColumnDescription(Table $table, $row)
-    {  
+    {
         switch($row['DATA_TYPE']) {
             case 'DATE':
                 $field = ['type' => 'datetime', 'length' => null];
                 break;
-			case 'TIMESTAMP':
-			case 'TIMESTAMP(6)':
-			case 'TIMESTAMP(9)':
-				$field = ['type' => 'timestamp', 'length' => null];
+            case 'TIMESTAMP':
+            case 'TIMESTAMP(6)':
+            case 'TIMESTAMP(9)':
+                $field = ['type' => 'timestamp', 'length' => null];
                 break;
             case 'NUMBER':
                 if ($row['DATA_PRECISION'] == 1) {
@@ -96,18 +96,18 @@ class OracleSchema extends BaseSchema
                     }
                 }
                 break;
-			case 'FLOAT':
-				$field = ['type' => 'decimal', 'length' => $row['DATA_PRECISION']];
+            case 'FLOAT':
+                $field = ['type' => 'decimal', 'length' => $row['DATA_PRECISION']];
                 break;
-			case 'CHAR':
+            case 'CHAR':
             case 'VARCHAR2':
                 $field = ['type' => 'string', 'length' => $row['DATA_LENGTH']];
                 break;
-			case 'CLOB':
+            case 'CLOB':
                 $field = ['type' => 'string', 'length' => $row['DATA_LENGTH']];
                 break;
-			case 'RAW':
-			case 'BLOB':
+            case 'RAW':
+            case 'BLOB':
                 $field = ['type' => 'binary', 'length' => $row['DATA_LENGTH']];
                 break;
             default:
@@ -209,7 +209,7 @@ class OracleSchema extends BaseSchema
             'float' => ' FLOAT',
             'decimal' => ' NUMBER',
             'text' => ' CLOB',
-			'date' => ' DATE',
+            'date' => ' DATE',
             'time' => ' DATE',
             'datetime' => ' DATE',
             'timestamp' => ' TIMESTAMP(6)',

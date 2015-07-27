@@ -34,23 +34,6 @@ class OracleStatement extends StatementDecorator
         return $this->_statement->execute($params);
     }
 
-    /**
-     * Returns the number of rows returned of affected by last execution
-     *
-     * @return int
-     */
-    public function rowCount()
-    {
-//        if (preg_match('/^(?:DELETE|UPDATE|INSERT)/i', $this->_statement->queryString)) {
-//            $changes = $this->_driver->prepare('SELECT CHANGES()');
-//            $changes->execute();
-//            $count = $changes->fetch()[0];
-//            $changes->closeCursor();
-//            return (int)$count;
-//        }
-        return parent::rowCount();
-    }
-
     public function __get($property)
     {
         if ($property === 'queryString') {
