@@ -384,4 +384,13 @@ class OracleSchema extends BaseSchema
         }
         return [sprintf("TRUNCATE TABLE %s", $tableName)];
     }
+
+    public function addConstraintSql(Table $table) {
+        throw new Oci8Exception("addConstraintSql has not been implemented");
+    }
+
+    public function dropConstraintSql(Table $table) {
+        throw new Oci8Exception("dropConstraintSql has not been implemented");
+    }
+
 }
