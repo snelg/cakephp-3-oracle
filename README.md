@@ -11,7 +11,7 @@ For existing applications you can add the
 following to your composer.json file:
 
     "require": {
-        "snelg/cakephp-3-oracle": "dev-master"
+        "snelg/cakephp-3-oracle": "~1.0"
     }
 
 And run `php composer.phar update`
