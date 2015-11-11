@@ -140,4 +140,9 @@ class Oracle extends Driver
                 end loop;
             end;";
     }
+
+    public function supportsDynamicConstraints()
+    {
+        return true;
+    }
 }
