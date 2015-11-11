@@ -385,12 +385,46 @@ class OracleSchema extends BaseSchema
         return [sprintf("TRUNCATE TABLE %s", $tableName)];
     }
 
-    public function addConstraintSql(Table $table) {
-        throw new Oci8Exception("addConstraintSql has not been implemented");
+    public function addConstraintSql(Table $table)
+    {
+        $sqlPattern = 'ALTER TABLE %s ADD %s;';
+        $sql = [];
+
+        foreach ($table->constraints() as $name) {
+            $constraint = $table->constraint($name);
+            if ($constraint['type'] === Table::CONSTRAINT_FOREIGN) {
+                if ($this->_driver->autoQuoting()) {
+                    $tableName = $this->_driver->quoteIdentifier($table->name());
+                } else {
+                    $tableName = $table->name();
+                }
+                $sql[] = sprintf($sqlPattern, $tableName, $this->constraintSql($table, $name));
+            }
+        }
+
+        return $sql;
     }
 
-    public function dropConstraintSql(Table $table) {
-        throw new Oci8Exception("dropConstraintSql has not been implemented");
+    public function dropConstraintSql(Table $table)
+    {
+        $sqlPattern = 'ALTER TABLE %s DROP CONSTRAINT %s;';
+        $sql = [];
+
+        foreach ($table->constraints() as $name) {
+            $constraint = $table->constraint($name);
+            if ($constraint['type'] === Table::CONSTRAINT_FOREIGN) {
+                if ($this->_driver->autoQuoting()) {
+                    $tableName = $this->_driver->quoteIdentifier($table->name());
+                    $constraintName = $this->_driver->quoteIdentifier($name);
+                } else {
+                    $tableName = $table->name();
+                    $constraintName = $name;
+                }
+                $sql[] = sprintf($sqlPattern, $tableName, $constraintName);
+            }
+        }
+
+        return $sql;
     }
 
 }
