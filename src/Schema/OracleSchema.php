@@ -1,8 +1,8 @@
 <?php
 namespace Cake\Oracle\Schema;
 
-use Cake\Database\Schema\Table;
 use Cake\Database\Schema\BaseSchema;
+use Cake\Database\Schema\Table;
 use yajra\Pdo\Oci8\Exceptions\Oci8Exception;
 
 /**
@@ -10,73 +10,85 @@ use yajra\Pdo\Oci8\Exceptions\Oci8Exception;
  */
 class OracleSchema extends BaseSchema
 {
+    /**
+     * {@inheritDoc}
+     */
     public function describeColumnSql($tableName, $config)
     {
         list($table, $schema) = $this->_tableSplit($tableName, $config);
         if (empty($schema)) {
             return [
-                'SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, DATA_PRECISION, DATA_SCALE, NULLABLE, DATA_DEFAULT '
-                . 'FROM user_tab_columns WHERE table_name = :bindTable', [
+                'SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, DATA_PRECISION, DATA_SCALE, NULLABLE, DATA_DEFAULT ' .
+                'FROM user_tab_columns WHERE table_name = :bindTable', [
                     ':bindTable' => $table]];
         }
         return [
-            'SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, DATA_PRECISION, DATA_SCALE, NULLABLE, DATA_DEFAULT '
-            . 'FROM all_tab_columns WHERE table_name = :bindTable AND owner = :bindOwner', [
+            'SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, DATA_PRECISION, DATA_SCALE, NULLABLE, DATA_DEFAULT ' .
+            'FROM all_tab_columns WHERE table_name = :bindTable AND owner = :bindOwner', [
                 ':bindTable' => $table,
                 ':bindOwner' => $schema]];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function describeIndexSql($tableName, $config)
     {
         list($table, $schema) = $this->_tableSplit($tableName, $config);
         if (empty($schema)) {
             return [
-                'SELECT cc.table_name, cc.column_name, cc.constraint_name, c.constraint_type, i.index_name, i.uniqueness '
-                . 'FROM user_cons_columns cc '
-                . 'LEFT JOIN user_indexes i ON(i.index_name  = cc.constraint_name) '
-                . 'LEFT JOIN user_constraints c ON(c.constraint_name = cc.constraint_name) '
-                . 'WHERE cc.table_name = :bindTable', [
+                'SELECT cc.table_name, cc.column_name, cc.constraint_name, c.constraint_type, i.index_name, i.uniqueness ' .
+                'FROM user_cons_columns cc ' .
+                'LEFT JOIN user_indexes i ON(i.index_name  = cc.constraint_name) ' .
+                'LEFT JOIN user_constraints c ON(c.constraint_name = cc.constraint_name) ' .
+                'WHERE cc.table_name = :bindTable', [
                     ':bindTable' => $table]];
         }
         return [
-            'SELECT cc.table_name, cc.column_name, cc.constraint_name, c.constraint_type, i.index_name, i.uniqueness '
-            . 'FROM all_cons_columns cc '
-            . 'LEFT JOIN all_indexes i ON(i.index_name  = cc.constraint_name AND cc.owner = i.owner) '
-            . 'LEFT JOIN all_constraints c ON(c.constraint_name = cc.constraint_name AND c.owner = cc.owner) '
-            . 'WHERE cc.table_name = :bindTable '
-            . 'AND cc.owner = :bindOwner', [
+            'SELECT cc.table_name, cc.column_name, cc.constraint_name, c.constraint_type, i.index_name, i.uniqueness ' .
+            'FROM all_cons_columns cc ' .
+            'LEFT JOIN all_indexes i ON(i.index_name  = cc.constraint_name AND cc.owner = i.owner) ' .
+            'LEFT JOIN all_constraints c ON(c.constraint_name = cc.constraint_name AND c.owner = cc.owner) ' .
+            'WHERE cc.table_name = :bindTable ' .
+            'AND cc.owner = :bindOwner', [
                 ':bindTable' => $table,
                 ':bindOwner' => $schema]];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function describeForeignKeySql($tableName, $config)
     {
         list($table, $schema) = $this->_tableSplit($tableName, $config);
         if (empty($schema)) {
             return [
-                'SELECT cc.column_name, cc.constraint_name, r.owner AS REFERENCED_OWNER, r.table_name AS REFERENCED_TABLE_NAME, r.column_name AS REFERENCED_COLUMN_NAME, c.delete_rule '
-                . 'FROM user_cons_columns cc '
-                . 'JOIN user_constraints c ON(c.constraint_name = cc.constraint_name) '
-                . 'JOIN user_cons_columns r ON(r.constraint_name = c.r_constraint_name) '
-                . "WHERE c.constraint_type = 'R' "
-                . 'AND cc.table_name = :bindTable', [
+                'SELECT cc.column_name, cc.constraint_name, r.owner AS REFERENCED_OWNER, r.table_name AS REFERENCED_TABLE_NAME, r.column_name AS REFERENCED_COLUMN_NAME, c.delete_rule ' .
+                'FROM user_cons_columns cc ' .
+                'JOIN user_constraints c ON(c.constraint_name = cc.constraint_name) ' .
+                'JOIN user_cons_columns r ON(r.constraint_name = c.r_constraint_name) ' .
+                "WHERE c.constraint_type = 'R' " .
+                'AND cc.table_name = :bindTable', [
                     ':bindTable' => $table]];
         }
         return [
-            'SELECT cc.column_name, cc.constraint_name, r.owner AS REFERENCED_OWNER, r.table_name AS REFERENCED_TABLE_NAME, r.column_name AS REFERENCED_COLUMN_NAME, c.delete_rule '
-            . 'FROM all_cons_columns cc '
-            . 'JOIN all_constraints c ON(c.constraint_name = cc.constraint_name AND c.owner = cc.owner) '
-            . 'JOIN all_cons_columns r ON(r.constraint_name = c.r_constraint_name AND r.owner = c.r_owner) '
-            . "WHERE c.constraint_type = 'R' "
-            . 'AND cc.table_name = :bindTable '
-            . 'AND cc.owner = :bindOwner', [
+            'SELECT cc.column_name, cc.constraint_name, r.owner AS REFERENCED_OWNER, r.table_name AS REFERENCED_TABLE_NAME, r.column_name AS REFERENCED_COLUMN_NAME, c.delete_rule ' .
+            'FROM all_cons_columns cc ' .
+            'JOIN all_constraints c ON(c.constraint_name = cc.constraint_name AND c.owner = cc.owner) ' .
+            'JOIN all_cons_columns r ON(r.constraint_name = c.r_constraint_name AND r.owner = c.r_owner) ' .
+            "WHERE c.constraint_type = 'R' " .
+            'AND cc.table_name = :bindTable ' .
+            'AND cc.owner = :bindOwner', [
                 ':bindTable' => $table,
                 ':bindOwner' => $schema]];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function convertColumnDescription(Table $table, $row)
     {
-        switch($row['DATA_TYPE']) {
+        switch ($row['DATA_TYPE']) {
             case 'DATE':
                 $field = ['type' => 'datetime', 'length' => null];
                 break;
@@ -118,13 +130,16 @@ class OracleSchema extends BaseSchema
         $table->addColumn(strtolower($row['COLUMN_NAME']), $field);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function convertIndexDescription(Table $table, $row)
     {
         $type = null;
         $columns = $length = [];
 
         $name = $row['CONSTRAINT_NAME'];
-        switch($row['CONSTRAINT_TYPE']) {
+        switch ($row['CONSTRAINT_TYPE']) {
             case 'P':
                 $name = $type = Table::CONSTRAINT_PRIMARY;
                 break;
@@ -166,6 +181,9 @@ class OracleSchema extends BaseSchema
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function convertForeignKeyDescription(Table $table, $row)
     {
         $data = [
@@ -179,6 +197,14 @@ class OracleSchema extends BaseSchema
         $table->addConstraint($name, $data);
     }
 
+    /**
+     * Helper method for generating key SQL snippets.
+     *
+     * @param string $tableName Table name, possibly including schema
+     * @param array $config The connection configuration to use for
+     *    getting tables from.
+     * @return string
+     */
     protected function _tableSplit($tableName, $config)
     {
         $schema = null;
@@ -193,6 +219,9 @@ class OracleSchema extends BaseSchema
         return [$table, $schema];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function columnSql(Table $table, $name)
     {
         $data = $table->column($name);
@@ -287,12 +316,8 @@ class OracleSchema extends BaseSchema
     }
 
     /**
-     * Convert foreign key constraints references to a valid
-     * stringified list (override to only use quoteIdentifier if autoQuoting is
-     * enabled)
-     *
-     * @param string|array $references The referenced columns of a foreign key constraint statement
-     * @return string
+     * {@inheritDoc}
+     * Override to only use quoteIdentifier if autoQuoting is enabled
      */
     protected function _convertConstraintColumns($references)
     {
@@ -333,6 +358,9 @@ class OracleSchema extends BaseSchema
         return $this->_keySql($out, $data);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function createTableSql(Table $table, $columns, $constraints, $indexes)
     {
         $content = array_merge($columns, $constraints);
@@ -363,11 +391,17 @@ class OracleSchema extends BaseSchema
         return $out;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function indexSql(Table $table, $name)
     {
         throw new Oci8Exception("indexSql has not been implemented");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function listTablesSql($config)
     {
         if (empty($config['schema'])) {
@@ -376,6 +410,9 @@ class OracleSchema extends BaseSchema
         return ['SELECT table_name FROM sys.all_tables WHERE owner = :bindOwner', [':bindOwner' => strtoupper($config['schema'])]];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function truncateTableSql(Table $table)
     {
         $tableName = $table->name();
@@ -385,6 +422,9 @@ class OracleSchema extends BaseSchema
         return [sprintf("TRUNCATE TABLE %s", $tableName)];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function addConstraintSql(Table $table)
     {
         $sqlPattern = 'ALTER TABLE %s ADD %s;';
@@ -405,6 +445,9 @@ class OracleSchema extends BaseSchema
         return $sql;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function dropConstraintSql(Table $table)
     {
         $sqlPattern = 'ALTER TABLE %s DROP CONSTRAINT %s;';
@@ -426,5 +469,4 @@ class OracleSchema extends BaseSchema
 
         return $sql;
     }
-
 }

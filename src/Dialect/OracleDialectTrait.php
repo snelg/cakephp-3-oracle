@@ -3,7 +3,6 @@ namespace Cake\Oracle\Dialect;
 
 use Cake\Database\SqlDialectTrait;
 use Cake\Oracle\OracleCompiler;
-use yajra\Pdo\Oci8\Exceptions\Oci8Exception;
 
 trait OracleDialectTrait
 {
@@ -14,6 +13,11 @@ trait OracleDialectTrait
     protected $_startQuote = '"';
     protected $_endQuote = '"';
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return \Cake\Oracle\OracleCompiler
+     */
     public function newCompiler()
     {
         return new OracleCompiler;
@@ -83,5 +87,4 @@ trait OracleDialectTrait
         //Oracle doesn't have "release savepoint" functionality
         return '';
     }
-
 }

@@ -1,16 +1,16 @@
 <?php
 namespace Cake\Oracle\Driver;
 
-use Cake\Oracle\Statement\OracleStatement;
-use Cake\Oracle\Statement\Oci8Statement;
-use Cake\Oracle\Schema\OracleSchema;
-use Cake\Oracle\Dialect\OracleDialectTrait;
 use Cake\Database\Driver;
 use Cake\Database\Driver\PDODriverTrait;
 use Cake\Database\Statement\PDOStatement;
+use Cake\Oracle\Dialect\OracleDialectTrait;
+use Cake\Oracle\Schema\OracleSchema;
+use Cake\Oracle\Statement\Oci8Statement;
+use Cake\Oracle\Statement\OracleStatement;
 use Cake\ORM\Query;
-use yajra\Pdo\Oci8;
 use PDO;
+use yajra\Pdo\Oci8;
 
 class Oracle extends Driver
 {
@@ -39,11 +39,19 @@ class Oracle extends Driver
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function enabled()
     {
         return function_exists('oci_connect');
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return \Cake\Oracle\Schema\OracleSchema
+     */
     public function schemaDialect()
     {
         if (!$this->_schemaDialect) {
@@ -52,6 +60,9 @@ class Oracle extends Driver
         return $this->_schemaDialect;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function connect()
     {
         if ($this->_connection) {
@@ -78,6 +89,11 @@ class Oracle extends Driver
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return \Cake\Oracle\Statement\OracleStatement
+     */
     public function prepare($query)
     {
         $this->connect();
@@ -94,6 +110,13 @@ class Oracle extends Driver
         return $statement;
     }
 
+    /**
+     * Add "FROM DUAL" to SQL statements that are SELECT statements
+     * with no FROM clause specified
+     *
+     * @param string $queryString query
+     * @return string
+     */
     protected function _fromDualIfy($queryString)
     {
         $statement = strtolower(trim($queryString));
@@ -105,16 +128,28 @@ class Oracle extends Driver
         return "{$queryString} FROM DUAL";
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function disableForeignKeySQL()
     {
         return $this->_foreignKeySQL('disable');
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function enableForeignKeySQL()
     {
         return $this->_foreignKeySQL('enable');
     }
 
+    /**
+     * Get the SQL for enabling or disabling foreign keys
+     *
+     * @param string $enableDisable "enable" or "disable"
+     * @return string
+     */
     protected function _foreignKeySQL($enableDisable)
     {
         $startQuote = $this->_startQuote;
@@ -132,15 +167,18 @@ class Oracle extends Driver
                 {$fromWhere};
             begin
                 for r in c loop
-                    execute immediate 'alter table "
-                    . "{$startQuote}' || r.owner || '{$endQuote}."
-                    . "{$startQuote}' || r.table_name || '{$endQuote} "
-                    . "{$enableDisable} constraint "
-                    . "{$startQuote}' || r.constraint_name || '{$endQuote}';
+                    execute immediate 'alter table " .
+                    "{$startQuote}' || r.owner || '{$endQuote}." .
+                    "{$startQuote}' || r.table_name || '{$endQuote} " .
+                    "{$enableDisable} constraint " .
+                    "{$startQuote}' || r.constraint_name || '{$endQuote}';
                 end loop;
             end;";
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function supportsDynamicConstraints()
     {
         return true;

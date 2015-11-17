@@ -1,9 +1,9 @@
 <?php
 namespace Cake\Oracle\Statement;
 
-use Cake\Database\Statement\StatementDecorator;
 use Cake\Database\Statement\BufferedStatement;
 use Cake\Database\Statement\BufferResultsTrait;
+use Cake\Database\Statement\StatementDecorator;
 
 /**
  * Statement class meant to be used by an Oracle driver
@@ -19,7 +19,6 @@ class OracleStatement extends StatementDecorator
 
     /**
      * {@inheritDoc}
-     *
      */
     public function execute($params = null)
     {
@@ -34,6 +33,9 @@ class OracleStatement extends StatementDecorator
         return $this->_statement->execute($params);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function __get($property)
     {
         if ($property === 'queryString') {

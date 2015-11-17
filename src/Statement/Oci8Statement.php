@@ -9,10 +9,9 @@ use yajra\Pdo\Oci8\Statement;
 class Oci8Statement extends Statement
 {
     /**
-     * Constructor
-     *
+     * {@inheritDoc}
      */
-    public function __construct($sth, Oci8 $pdoOci8 = null, array $options = array())
+    public function __construct($sth, Oci8 $pdoOci8 = null, array $options = [])
     {
         if (is_object($sth) && $sth instanceof Statement) {
             parent::__construct($sth->_sth, $sth->_pdoOci8, $sth->_options);
@@ -21,6 +20,9 @@ class Oci8Statement extends Statement
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function closeCursor()
     {
         if (empty($this->_sth)) {
