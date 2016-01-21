@@ -115,6 +115,12 @@ class OracleSchema extends BaseSchema
             case 'VARCHAR2':
                 $field = ['type' => 'string', 'length' => $row['DATA_LENGTH']];
                 break;
+            case 'LONG':
+                $field = ['type' => 'string', 'length' => null];
+                break;
+            case 'LONG RAW':
+                $field = ['type' => 'binary', 'length' => null];
+                break;
             case 'CLOB':
                 $field = ['type' => 'string', 'length' => $row['DATA_LENGTH']];
                 break;
