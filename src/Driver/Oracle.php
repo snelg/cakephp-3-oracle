@@ -3,12 +3,12 @@ namespace Cake\Oracle\Driver;
 
 use Cake\Database\Driver;
 use Cake\Database\Driver\PDODriverTrait;
+use Cake\Database\Query;
 use Cake\Database\Statement\PDOStatement;
 use Cake\Oracle\Dialect\OracleDialectTrait;
 use Cake\Oracle\Schema\OracleSchema;
 use Cake\Oracle\Statement\Oci8Statement;
 use Cake\Oracle\Statement\OracleStatement;
-use Cake\ORM\Query;
 use PDO;
 use yajra\Pdo\Oci8;
 
@@ -97,15 +97,17 @@ class Oracle extends Driver
     public function prepare($query)
     {
         $this->connect();
-        $isObject = ($query instanceof Query) || ($query instanceof \Cake\Database\Query);
+        $isObject = ($query instanceof Query);
         $queryStringRaw = $isObject ? $query->sql() : $query;
         $queryString = $this->_fromDualIfy($queryStringRaw);
         $yajraStatement = $this->_connection->prepare($queryString);
         $oci8Statement = new Oci8Statement($yajraStatement); //Need to override some un-implemented methods in yajra Oci8 "Statement" class
         $statement = new OracleStatement(new PDOStatement($oci8Statement, $this), $this); //And now wrap in a Cake-ified, bufferable Statement
         $statement->queryString = $queryStringRaw; //Oci8PDO does not correctly set read-only $queryString property, so we have a manual override
-        if ($isObject && $query->bufferResults() === false) {
-            $statement->bufferResults(false);
+        if ($isObject) {
+			if ($query->bufferResults() === false || $query->type() != 'select') {
+	            $statement->bufferResults(false);
+			}
         }
         return $statement;
     }
