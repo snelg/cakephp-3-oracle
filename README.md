@@ -2,7 +2,7 @@
 
 This is an alpha version of an Oracle Datasource for CakePHP 3.0.
 Currently the only functionality is basic data reading; Inserting,
-deleting, and updating have not yet been tested.
+deleting, and updating have only been tested minimally.
 
 ## Installing via composer
 
@@ -31,7 +31,21 @@ Sample connection info:
             'username' => 'you know what goes here',
             'password' => 'and here',
             'database' => 'TNS entry name or full conn string, e.g. (DESCRIPTION=(ADDRESS_LIST=( [...] )))',
-            'schema' => 'SCHEMA_NAME',
+            'schema' => 'SCHEMA_NAME', //The schema that owns the tables, not necessarily your login schema
         ],
     ]
+```
+
+If your data tables are owned by a different schema than your login user, then make sure you put the table-owning schema name in the "schema" field instead of your login schema.
+
+If you want to access data from multiple schemas, then you do *not* need multiple datasources. Instead, you can specify the schema in a Table's "initialize" function:
+
+```php
+class UsersTable extends Table
+{
+    public function initialize(array $config)
+    {
+        $this->table('some_other_schema.users');
+    }
+}
 ```
