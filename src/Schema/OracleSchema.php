@@ -410,10 +410,15 @@ class OracleSchema extends BaseSchema
      */
     public function listTablesSql($config)
     {
-        if (empty($config['schema'])) {
-            return ['SELECT table_name FROM sys.user_tables', []];
+        if ($this->_driver->autoQuoting()) {
+            $column = 'table_name';
+        } else {
+            $column = 'LOWER(table_name)';
         }
-        return ['SELECT table_name FROM sys.all_tables WHERE owner = :bindOwner', [':bindOwner' => strtoupper($config['schema'])]];
+        if (empty($config['schema'])) {
+            return ["SELECT {$column} FROM sys.user_tables", []];
+        }
+        return ["SELECT {$column} FROM sys.all_tables WHERE owner = :bindOwner", [':bindOwner' => strtoupper($config['schema'])]];
     }
 
     /**
