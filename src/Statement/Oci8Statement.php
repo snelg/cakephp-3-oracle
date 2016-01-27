@@ -8,6 +8,8 @@ use yajra\Pdo\Oci8\Statement;
  */
 class Oci8Statement extends Statement
 {
+    protected $preserveBindings = [];
+
     /**
      * {@inheritDoc}
      */
@@ -30,6 +32,21 @@ class Oci8Statement extends Statement
         }
         $success = oci_free_statement($this->_sth);
         $this->_sth = null;
+        $this->preserveBindings = [];
         return $success;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function bindValue($parameter, $variable, $dataType = PDO::PARAM_STR)
+    {
+        /* PHP 7 apparently cleans up bound variables before we get back to
+         * oci_execute. But oci_bind_by_name binds variables by reference.
+         * We need to make sure the actual referenced $variable remains
+         * active until later, so we just toss it onto a pile here
+         */
+        $this->preserveBindings[] = &$variable;
+        return $this->bindParam($parameter, $variable, $dataType);
     }
 }
