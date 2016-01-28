@@ -3,7 +3,7 @@ namespace Cake\Oracle\Schema;
 
 use Cake\Database\Schema\BaseSchema;
 use Cake\Database\Schema\Table;
-use yajra\Pdo\Oci8\Exceptions\Oci8Exception;
+use Yajra\Pdo\Oci8\Exceptions\Oci8Exception;
 
 /**
  * Schema generation/reflection features for Oracle

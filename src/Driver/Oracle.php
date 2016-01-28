@@ -10,7 +10,7 @@ use Cake\Oracle\Schema\OracleSchema;
 use Cake\Oracle\Statement\Oci8Statement;
 use Cake\Oracle\Statement\OracleStatement;
 use PDO;
-use yajra\Pdo\Oci8;
+use Yajra\Pdo\Oci8;
 
 class Oracle extends Driver
 {
