@@ -6,12 +6,16 @@ use Cake\Oracle\OracleCompiler;
 
 trait OracleDialectTrait
 {
-    use SqlDialectTrait;
+    use SqlDialectTrait {
+        quoteIdentifier as origQuoteIdentifier;
+    }
 
     protected $_schemaDialect;
 
     protected $_startQuote = '"';
     protected $_endQuote = '"';
+
+    public $autoShortenedIdentifiers = [];
 
     /**
      * {@inheritDoc}
@@ -86,5 +90,28 @@ trait OracleDialectTrait
     {
         //Oracle doesn't have "release savepoint" functionality
         return '';
+    }
+
+    /**
+     * VERY HACKY: To avoid Oracle's "No identifiers > 30 characters"
+     * restriction, at this very low level we'll auto-replace Cake automagic
+     * aliases like 'SomeLongTableName__some_really_long_field_name' with
+     * 'XXAUTO_SHORTENED_ID[n]' where [n] is a simple incrementing integer.
+     * Then in OracleStatement's "fetch" function, we'll undo these
+     * auto-replacements
+     *
+     * {@inheritDoc}
+     */
+    public function quoteIdentifier($identifier)
+    {
+        if (preg_match('/^[\w-]+$/', $identifier) && strlen($identifier) > 30) {
+            $key = array_search($identifier, $this->autoShortenedIdentifiers);
+            if ($key === false) {
+                $key = 'XXAUTO_SHORTENED_ID' . (count($this->autoShortenedIdentifiers) + 1);
+                $this->autoShortenedIdentifiers[$key] = $identifier;
+            }
+            $identifier = $key;
+        }
+        return $this->origQuoteIdentifier($identifier);
     }
 }
