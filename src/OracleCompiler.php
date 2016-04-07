@@ -68,15 +68,24 @@ class OracleCompiler extends QueryCompiler
         $origEpilog = $query->clause('epilog');
         $limit = intval($query->clause('limit'));
         if (empty($limit)) {
-            $offsetEnd = ') WHERE ROWNUM > :SNELG_FETCH_OFFSET';
+            $offsetEnd = ") WHERE ROWNUM > $offset";
         } else {
-            $offsetEnd = ') WHERE snelg_oracle_sub_rnum > :SNELG_FETCH_OFFSET';
+            $offsetEnd = ") WHERE snelg_oracle_sub_rnum > $offset";
         }
 
-        $query->bind(':SNELG_FETCH_OFFSET', $offset);
+        /*
+         * It would be more efficient to use bind vars here, e.g.
+         *
+         * $query->bind(':SNELG_FETCH_OFFSET', $offset);
+         *
+         * EXCEPT that additional calls to $query->count() (e.g. in Paginator
+         * component) reset the Query "limit" and "offset" to null.
+         * In that case, the re-run Query would try to bind to the a
+         * non-existent bind var
+         */
         $query->epilog([
             'snelgOracleOrigEpilog' => $origEpilog,
-            'snelgOracleEndWrap' => $offsetEnd
+            'snelgOracleOffsetEndWrap' => $offsetEnd
         ]);
 
         return 'SELECT * FROM (';
@@ -98,16 +107,18 @@ class OracleCompiler extends QueryCompiler
         $offset = intval($query->clause('offset'));
         $endRow = $offset + $limit;
         $origEpilog = $query->clause('epilog');
-        $limitEnd = ') a WHERE ROWNUM <= :SNELG_MAX_ROW_TO_FETCH';
+        $offsetEnd = '';
         if (!empty($offset) && $offset > 0) {
-            $limitEnd .= $origEpilog['snelgOracleEndWrap'];
+            $offsetEnd .= $origEpilog['snelgOracleOffsetEndWrap'];
             $origEpilog = $origEpilog['snelgOracleOrigEpilog'];
         }
 
-        $query->bind(':SNELG_MAX_ROW_TO_FETCH', $endRow);
+        //See note in _buildOffsetPart about ->bind being potentially
+        //more efficient here
         $query->epilog([
             'snelgOracleOrigEpilog' => $origEpilog,
-            'snelgOracleEndWrap' => $limitEnd
+            'snelgOracleLimitEndWrap' => ") a WHERE ROWNUM <= $endRow",
+            'snelgOracleOffsetEndWrap' => $offsetEnd
         ]);
 
         return 'SELECT /*+ FIRST_ROWS(n) */ a.*, ROWNUM snelg_oracle_sub_rnum FROM (';
@@ -139,9 +150,21 @@ class OracleCompiler extends QueryCompiler
         $origEpilog = $this->_stringifyExpressions((array)$origEpilog, $generator);
         $epilogSql = sprintf(' %s', implode(', ', $origEpilog));
 
-        //And then add our own wrapper
-        if (is_array($epilog) && !empty($epilog['snelgOracleEndWrap'])) {
-            $epilogSql .= ' ' . $epilog['snelgOracleEndWrap'];
+        //...and then add our own wrappers.
+        /*
+         * We need to double-check that "limit" and/or "offset"
+         * are actually set because calls to $query->count() (e.g. in Paginator
+         * component) reset the Query "limit" and "offset" to null
+         */
+        if (is_array($epilog)) {
+            if (!empty($epilog['snelgOracleLimitEndWrap'])
+                    && intval($query->clause('limit') > 0)) {
+                $epilogSql .= $epilog['snelgOracleLimitEndWrap'];
+            }
+            if (!empty($epilog['snelgOracleOffsetEndWrap'])
+                    && intval($query->clause('offset') > 0)) {
+                $epilogSql .= $epilog['snelgOracleOffsetEndWrap'];
+            }
         }
 
         return $epilogSql;
