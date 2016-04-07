@@ -69,11 +69,15 @@ class OracleCompiler extends QueryCompiler
         }
 
         $origEpilog = $query->clause('epilog');
+        if (is_array($origEpilog) && array_key_exists('snelgOracleOrigEpilog', $origEpilog)) {
+            $origEpilog = $origEpilog['snelgOracleOrigEpilog'];
+        }
+
         $limit = intval($query->clause('limit'));
         if ($limit < 1) {
-            $offsetEnd = ") a) WHERE snelg_oracle_sub_rnum > $offset";
+            $offsetEndWrap = ") a) WHERE snelg_oracle_sub_rnum > $offset";
         } else {
-            $offsetEnd = ") WHERE snelg_oracle_sub_rnum > $offset";
+            $offsetEndWrap = ") WHERE snelg_oracle_sub_rnum > $offset";
         }
 
         /*
@@ -88,7 +92,7 @@ class OracleCompiler extends QueryCompiler
          */
         $query->epilog([
             'snelgOracleOrigEpilog' => $origEpilog,
-            'snelgOracleOffsetEndWrap' => $offsetEnd
+            'snelgOracleOffsetEndWrap' => $offsetEndWrap
         ]);
 
         if ($limit < 1) {
@@ -111,12 +115,11 @@ class OracleCompiler extends QueryCompiler
             return '';
         }
 
-        $offset = intval($query->clause('offset'));
-        $endRow = $offset + $limit;
+        $endRow = intval($query->clause('offset')) + $limit;
         $origEpilog = $query->clause('epilog');
-        $offsetEnd = '';
-        if ($offset > 0) {
-            $offsetEnd .= $origEpilog['snelgOracleOffsetEndWrap'];
+        $offsetEndWrap = '';
+        if (is_array($origEpilog) && array_key_exists('snelgOracleOrigEpilog', $origEpilog)) {
+            $offsetEndWrap = empty($origEpilog['snelgOracleOffsetEndWrap']) ? '' : $origEpilog['snelgOracleOffsetEndWrap'];
             $origEpilog = $origEpilog['snelgOracleOrigEpilog'];
         }
 
@@ -125,7 +128,7 @@ class OracleCompiler extends QueryCompiler
         $query->epilog([
             'snelgOracleOrigEpilog' => $origEpilog,
             'snelgOracleLimitEndWrap' => ") a WHERE ROWNUM <= $endRow",
-            'snelgOracleOffsetEndWrap' => $offsetEnd
+            'snelgOracleOffsetEndWrap' => $offsetEndWrap
         ]);
 
         return 'SELECT /*+ FIRST_ROWS(n) */ a.*, ROWNUM snelg_oracle_sub_rnum FROM (';
