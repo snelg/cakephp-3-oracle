@@ -100,7 +100,7 @@ class OracleCompiler extends QueryCompiler
         $origEpilog = $query->clause('epilog');
         $limitEnd = ') a WHERE ROWNUM <= :SNELG_MAX_ROW_TO_FETCH';
         if (!empty($offset) && $offset > 0) {
-            $limitEnd .= ' ' . $origEpilog['snelgOracleEndWrap'];
+            $limitEnd .= $origEpilog['snelgOracleEndWrap'];
             $origEpilog = $origEpilog['snelgOracleOrigEpilog'];
         }
 
