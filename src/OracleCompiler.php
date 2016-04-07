@@ -53,7 +53,10 @@ class OracleCompiler extends QueryCompiler
     ];
 
     /**
-     * Generates the OFFSET part of a SQL query
+     * Generates the OFFSET part of a SQL query.
+     * Due to the way Oracle ROWNUM works, if you want an offset *without*
+     * a limit, you still need to add a similar subquery as you use with
+     * a limit.
      *
      * @param int $offset the offset clause
      * @param \Cake\Database\Query $query The query that is being compiled
@@ -68,7 +71,7 @@ class OracleCompiler extends QueryCompiler
         $origEpilog = $query->clause('epilog');
         $limit = intval($query->clause('limit'));
         if (empty($limit)) {
-            $offsetEnd = ") WHERE ROWNUM > $offset";
+            $offsetEnd = ") a) WHERE snelg_oracle_sub_rnum > $offset";
         } else {
             $offsetEnd = ") WHERE snelg_oracle_sub_rnum > $offset";
         }
@@ -88,7 +91,11 @@ class OracleCompiler extends QueryCompiler
             'snelgOracleOffsetEndWrap' => $offsetEnd
         ]);
 
-        return 'SELECT * FROM (';
+        if (empty($limit)) {
+            return 'SELECT * FROM (SELECT /*+ FIRST_ROWS(n) */ a.*, ROWNUM snelg_oracle_sub_rnum FROM (';
+        } else {
+            return 'SELECT * FROM (';
+        }
     }
 
     /**
