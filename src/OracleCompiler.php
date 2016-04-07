@@ -64,13 +64,13 @@ class OracleCompiler extends QueryCompiler
      */
     protected function _buildOffsetPart($offset, $query)
     {
-        if (empty($offset) || intval($offset) < 1) {
+        if (intval($offset) < 1) {
             return '';
         }
 
         $origEpilog = $query->clause('epilog');
         $limit = intval($query->clause('limit'));
-        if (empty($limit)) {
+        if ($limit < 1) {
             $offsetEnd = ") a) WHERE snelg_oracle_sub_rnum > $offset";
         } else {
             $offsetEnd = ") WHERE snelg_oracle_sub_rnum > $offset";
@@ -91,7 +91,7 @@ class OracleCompiler extends QueryCompiler
             'snelgOracleOffsetEndWrap' => $offsetEnd
         ]);
 
-        if (empty($limit)) {
+        if ($limit < 1) {
             return 'SELECT * FROM (SELECT /*+ FIRST_ROWS(n) */ a.*, ROWNUM snelg_oracle_sub_rnum FROM (';
         } else {
             return 'SELECT * FROM (';
@@ -107,7 +107,7 @@ class OracleCompiler extends QueryCompiler
      */
     protected function _buildLimitPart($limit, $query)
     {
-        if (empty($limit) || intval($limit) < 1) {
+        if (intval($limit) < 1) {
             return '';
         }
 
@@ -115,7 +115,7 @@ class OracleCompiler extends QueryCompiler
         $endRow = $offset + $limit;
         $origEpilog = $query->clause('epilog');
         $offsetEnd = '';
-        if (!empty($offset) && $offset > 0) {
+        if ($offset > 0) {
             $offsetEnd .= $origEpilog['snelgOracleOffsetEndWrap'];
             $origEpilog = $origEpilog['snelgOracleOrigEpilog'];
         }
