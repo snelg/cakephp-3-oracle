@@ -131,6 +131,7 @@ class OracleSchema extends BaseSchema
                 break;
             case 'CHAR':
             case 'VARCHAR2':
+            case 'NVARCHAR2':
                 $field = ['type' => 'string', 'length' => $row['DATA_LENGTH']];
                 break;
             case 'LONG':
