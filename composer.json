@@ -5,7 +5,7 @@
     "license": "MIT",
     "require": {
         "ext-oci8": "*",
-        "yajra/laravel-pdo-via-oci8": "1.0.2"
+        "yajra/laravel-pdo-via-oci8": "~1.0"
     },
     "require-dev": {
         "cakephp/cakephp": "~3.0",
