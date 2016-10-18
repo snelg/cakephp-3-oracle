@@ -28,6 +28,7 @@ use Cake\Oracle\Schema\OracleSchema;
 use Cake\Oracle\Statement\Oci8Statement;
 use Cake\Oracle\Statement\OracleStatement;
 use PDO;
+use ReflectionObject;
 use Yajra\Pdo\Oci8;
 
 class Oracle extends Driver
@@ -202,5 +203,35 @@ class Oracle extends Driver
     public function supportsDynamicConstraints()
     {
         return true;
+    }
+
+    /**
+     * Returns last id generated for a table or sequence in database
+     * Override info:
+     * Yajra expects sequence name to be passed in, but Cake typically passes
+     * in table name. Yajra already has logic to guess sequence name based on
+     * last-inserted-table name ("{tablename}_id_seq") IF null is passed in,
+     * so we'll take a peek at that "last inserted table name" private property
+     * and null it out if needed
+     *
+     * @param string|null $sequence Sequence (NOT TABLE in Oracle) to get last insert value from
+     * @param string|null $ignored Ignored in Oracle
+     * @return string|int
+     */
+    public function lastInsertId($sequence = null, $ignored = null)
+    {
+        $this->connect();
+
+        if (!empty($sequence) && !empty($this->_connection)) {
+            $reflection = new ReflectionObject($this->_connection);
+            $property = $reflection->getProperty('table');
+            $property->setAccessible(true);
+            $baseTable = $property->getValue($this->_connection);
+            if ($baseTable == $sequence) {
+                $sequence = null;
+            }
+        }
+
+        return $this->_connection->lastInsertId($sequence);
     }
 }

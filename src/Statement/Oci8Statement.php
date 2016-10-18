@@ -19,6 +19,7 @@
  */
 namespace Cake\Oracle\Statement;
 
+use ReflectionObject;
 use Yajra\Pdo\Oci8\Statement;
 
 /**
@@ -51,7 +52,7 @@ class Oci8Statement extends Statement
      */
     protected function _getParentProperties(Statement $sth, $names)
     {
-        $reflection = new \ReflectionObject($sth);
+        $reflection = new ReflectionObject($sth);
         $properties = [];
         foreach ($names as $name) {
             $property = $reflection->getProperty($name);
