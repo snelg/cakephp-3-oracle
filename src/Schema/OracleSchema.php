@@ -20,7 +20,7 @@
 namespace Cake\Oracle\Schema;
 
 use Cake\Database\Schema\BaseSchema;
-use Cake\Database\Schema\Table;
+use Cake\Database\Schema\TableSchema;
 use Yajra\Pdo\Oci8\Exceptions\Oci8Exception;
 
 /**
@@ -104,7 +104,7 @@ class OracleSchema extends BaseSchema
     /**
      * {@inheritDoc}
      */
-    public function convertColumnDescription(Table $table, $row)
+    public function convertColumnDescription(TableSchema $table, $row)
     {
         switch ($row['DATA_TYPE']) {
             case 'DATE':
@@ -158,7 +158,7 @@ class OracleSchema extends BaseSchema
     /**
      * {@inheritDoc}
      */
-    public function convertIndexDescription(Table $table, $row)
+    public function convertIndexDescription(TableSchema $table, $row)
     {
         $type = null;
         $columns = $length = [];
@@ -166,10 +166,10 @@ class OracleSchema extends BaseSchema
         $name = $row['CONSTRAINT_NAME'];
         switch ($row['CONSTRAINT_TYPE']) {
             case 'P':
-                $name = $type = Table::CONSTRAINT_PRIMARY;
+                $name = $type = TableSchema::CONSTRAINT_PRIMARY;
                 break;
             case 'U':
-                $type = Table::CONSTRAINT_UNIQUE;
+                $type = TableSchema::CONSTRAINT_UNIQUE;
                 break;
             default:
                 return; //Not doing anything here with Oracle "Check" constraints or "Reference" constraints
@@ -178,13 +178,13 @@ class OracleSchema extends BaseSchema
         $columns[] = strtolower($row['COLUMN_NAME']);
 
         $isIndex = (
-            $type === Table::INDEX_INDEX ||
-            $type === Table::INDEX_FULLTEXT
+            $type === TableSchema::INDEX_INDEX ||
+            $type === TableSchema::INDEX_FULLTEXT
         );
         if ($isIndex) {
             $existing = $table->index($name);
         } else {
-            $existing = $table->constraint($name);
+            $existing = $table->getConstraint($name);
         }
 
         if (!empty($existing)) {
@@ -209,13 +209,13 @@ class OracleSchema extends BaseSchema
     /**
      * {@inheritDoc}
      */
-    public function convertForeignKeyDescription(Table $table, $row)
+    public function convertForeignKeyDescription(TableSchema $table, $row)
     {
         $data = [
-            'type' => Table::CONSTRAINT_FOREIGN,
+            'type' => TableSchema::CONSTRAINT_FOREIGN,
             'columns' => [strtolower($row['COLUMN_NAME'])],
             'references' => ["{$row['REFERENCED_OWNER']}.{$row['REFERENCED_TABLE_NAME']}", strtolower($row['REFERENCED_COLUMN_NAME'])],
-            'update' => Table::ACTION_SET_NULL,
+            'update' => TableSchema::ACTION_SET_NULL,
             'delete' => $this->_convertOnClause($row['DELETE_RULE']),
         ];
         $name = $row['CONSTRAINT_NAME'];
@@ -247,7 +247,7 @@ class OracleSchema extends BaseSchema
     /**
      * {@inheritDoc}
      */
-    public function columnSql(Table $table, $name)
+    public function columnSql(TableSchema $table, $name)
     {
         $data = $table->column($name);
         if ($this->_driver->autoQuoting()) {
@@ -324,7 +324,7 @@ class OracleSchema extends BaseSchema
             );
         }
 
-        if ($data['type'] === Table::CONSTRAINT_FOREIGN) {
+        if ($data['type'] === TableSchema::CONSTRAINT_FOREIGN) {
             $keyName = $data['references'][0];
             if ($this->_driver->autoQuoting()) {
                 $keyName = $this->_driver->quoteIdentifier($keyName);
@@ -366,7 +366,7 @@ class OracleSchema extends BaseSchema
     /**
      * {@inheritDoc}
      */
-    public function constraintSql(Table $table, $name)
+    public function constraintSql(TableSchema $table, $name)
     {
         $data = $table->constraint($name);
         if ($this->_driver->autoQuoting()) {
@@ -374,10 +374,10 @@ class OracleSchema extends BaseSchema
         } else {
             $out = 'CONSTRAINT ' . $name;
         }
-        if ($data['type'] === Table::CONSTRAINT_PRIMARY) {
+        if ($data['type'] === TableSchema::CONSTRAINT_PRIMARY) {
             $out = 'PRIMARY KEY';
         }
-        if ($data['type'] === Table::CONSTRAINT_UNIQUE) {
+        if ($data['type'] === TableSchema::CONSTRAINT_UNIQUE) {
             $out .= ' UNIQUE';
         }
         return $this->_keySql($out, $data);
@@ -386,7 +386,7 @@ class OracleSchema extends BaseSchema
     /**
      * {@inheritDoc}
      */
-    public function createTableSql(Table $table, $columns, $constraints, $indexes)
+    public function createTableSql(TableSchema $table, $columns, $constraints, $indexes)
     {
         $content = array_merge($columns, $constraints);
         $content = implode(",\n", array_filter($content));
@@ -419,7 +419,7 @@ class OracleSchema extends BaseSchema
     /**
      * {@inheritDoc}
      */
-    public function indexSql(Table $table, $name)
+    public function indexSql(TableSchema $table, $name)
     {
         throw new Oci8Exception("indexSql has not been implemented");
     }
@@ -429,7 +429,7 @@ class OracleSchema extends BaseSchema
      */
     public function listTablesSql($config)
     {
-        if ($this->_driver->autoQuoting()) {
+        if ($this->_driver->isAutoQuotingEnabled()) {
             $column = 'table_name';
         } else {
             $column = 'LOWER(table_name)';
@@ -443,7 +443,7 @@ class OracleSchema extends BaseSchema
     /**
      * {@inheritDoc}
      */
-    public function truncateTableSql(Table $table)
+    public function truncateTableSql(TableSchema $table)
     {
         $tableName = $table->name();
         if ($this->_driver->autoQuoting()) {
@@ -455,14 +455,14 @@ class OracleSchema extends BaseSchema
     /**
      * {@inheritDoc}
      */
-    public function addConstraintSql(Table $table)
+    public function addConstraintSql(TableSchema $table)
     {
         $sqlPattern = 'ALTER TABLE %s ADD %s;';
         $sql = [];
 
         foreach ($table->constraints() as $name) {
             $constraint = $table->constraint($name);
-            if ($constraint['type'] === Table::CONSTRAINT_FOREIGN) {
+            if ($constraint['type'] === TableSchema::CONSTRAINT_FOREIGN) {
                 if ($this->_driver->autoQuoting()) {
                     $tableName = $this->_driver->quoteIdentifier($table->name());
                 } else {
@@ -478,14 +478,14 @@ class OracleSchema extends BaseSchema
     /**
      * {@inheritDoc}
      */
-    public function dropConstraintSql(Table $table)
+    public function dropConstraintSql(TableSchema $table)
     {
         $sqlPattern = 'ALTER TABLE %s DROP CONSTRAINT %s;';
         $sql = [];
 
         foreach ($table->constraints() as $name) {
             $constraint = $table->constraint($name);
-            if ($constraint['type'] === Table::CONSTRAINT_FOREIGN) {
+            if ($constraint['type'] === TableSchema::CONSTRAINT_FOREIGN) {
                 if ($this->_driver->autoQuoting()) {
                     $tableName = $this->_driver->quoteIdentifier($table->name());
                     $constraintName = $this->_driver->quoteIdentifier($name);

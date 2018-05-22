@@ -124,7 +124,7 @@ class Oracle extends Driver
         $statement = new OracleStatement(new PDOStatement($oci8Statement, $this), $this); //And now wrap in a Cake-ified, bufferable Statement
         $statement->queryString = $queryStringRaw; //Oci8PDO does not correctly set read-only $queryString property, so we have a manual override
         if ($isObject) {
-            if ($query->bufferResults() === false || $query->type() != 'select') {
+            if ($query->isBufferedResultsEnabled() === false || $query->type() != 'select') {
                 $statement->bufferResults(false);
             }
         }
