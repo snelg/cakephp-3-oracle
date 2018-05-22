@@ -8,7 +8,7 @@
         "yajra/laravel-pdo-via-oci8": "~1.0"
     },
     "require-dev": {
-        "cakephp/cakephp": "~3.0",
+        "cakephp/cakephp": "~3.5",
         "psr/log": "~1.0",
         "phpunit/phpunit": "~4.0"
     },
