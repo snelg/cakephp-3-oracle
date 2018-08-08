@@ -20,7 +20,6 @@
 namespace Cake\Oracle\Driver;
 
 use Cake\Database\Driver;
-use Cake\Database\Driver\PDODriverTrait;
 use Cake\Database\Query;
 use Cake\Database\Statement\PDOStatement;
 use Cake\Oracle\Dialect\OracleDialectTrait;
@@ -34,7 +33,6 @@ use Yajra\Pdo\Oci8;
 class Oracle extends Driver
 {
     use OracleDialectTrait;
-    use PDODriverTrait;
 
     protected $_baseConfig = [
         'flags' => [],
