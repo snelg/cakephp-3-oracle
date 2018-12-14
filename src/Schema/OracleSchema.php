@@ -182,7 +182,7 @@ class OracleSchema extends BaseSchema
             $type === TableSchema::INDEX_FULLTEXT
         );
         if ($isIndex) {
-            $existing = $table->index($name);
+            $existing = $table->getIndex($name);
         } else {
             $existing = $table->getConstraint($name);
         }
@@ -249,8 +249,8 @@ class OracleSchema extends BaseSchema
      */
     public function columnSql(TableSchema $table, $name)
     {
-        $data = $table->column($name);
-        if ($this->_driver->autoQuoting()) {
+        $data = $table->getColumn($name);
+        if ($this->_driver->isAutoQuotingEnabled()) {
             $out = $this->_driver->quoteIdentifier($name);
         } else {
             $out = $name;
@@ -318,7 +318,7 @@ class OracleSchema extends BaseSchema
     protected function _keySql($prefix, $data)
     {
         $columns = $data['columns'];
-        if ($this->_driver->autoQuoting()) {
+        if ($this->_driver->isAutoQuotingEnabled()) {
             $columns = array_map(
                 [$this->_driver, 'quoteIdentifier'],
                 $columns
@@ -327,7 +327,7 @@ class OracleSchema extends BaseSchema
 
         if ($data['type'] === TableSchema::CONSTRAINT_FOREIGN) {
             $keyName = $data['references'][0];
-            if ($this->_driver->autoQuoting()) {
+            if ($this->_driver->isAutoQuotingEnabled()) {
                 $keyName = $this->_driver->quoteIdentifier($keyName);
             }
             return $prefix . sprintf(
@@ -347,7 +347,7 @@ class OracleSchema extends BaseSchema
      */
     protected function _convertConstraintColumns($references)
     {
-        if ($this->_driver->autoQuoting()) {
+        if ($this->_driver->isAutoQuotingEnabled()) {
             if (is_string($references)) {
                 return $this->_driver->quoteIdentifier($references);
             }
@@ -369,8 +369,8 @@ class OracleSchema extends BaseSchema
      */
     public function constraintSql(TableSchema $table, $name)
     {
-        $data = $table->constraint($name);
-        if ($this->_driver->autoQuoting()) {
+        $data = $table->getConstraint($name);
+        if ($this->_driver->isAutoQuotingEnabled()) {
             $out = 'CONSTRAINT ' . $this->_driver->quoteIdentifier($name);
         } else {
             $out = 'CONSTRAINT ' . $name;
@@ -392,7 +392,7 @@ class OracleSchema extends BaseSchema
         $content = array_merge($columns, $constraints);
         $content = implode(",\n", array_filter($content));
         $tableName = $table->name();
-        if ($this->_driver->autoQuoting()) {
+        if ($this->_driver->isAutoQuotingEnabled()) {
             $tableName = $this->_driver->quoteIdentifier($tableName);
         }
         $out = [sprintf("CREATE TABLE %s (\n%s\n)", $tableName, $content)];
@@ -400,8 +400,8 @@ class OracleSchema extends BaseSchema
             $out[] = $index;
         }
         foreach ($table->columns() as $column) {
-            $columnData = $table->column($column);
-            if ($this->_driver->autoQuoting()) {
+            $columnData = $table->getColumn($column);
+            if ($this->_driver->isAutoQuotingEnabled()) {
                 $column = $this->_driver->quoteIdentifier($column);
             }
             if (isset($columnData['comment'])) {
@@ -447,7 +447,7 @@ class OracleSchema extends BaseSchema
     public function truncateTableSql(TableSchema $table)
     {
         $tableName = $table->name();
-        if ($this->_driver->autoQuoting()) {
+        if ($this->_driver->isAutoQuotingEnabled()) {
             $tableName = $this->_driver->quoteIdentifier($tableName);
         }
         return [sprintf("TRUNCATE TABLE %s", $tableName)];
@@ -462,9 +462,9 @@ class OracleSchema extends BaseSchema
         $sql = [];
 
         foreach ($table->constraints() as $name) {
-            $constraint = $table->constraint($name);
+            $constraint = $table->getConstraint($name);
             if ($constraint['type'] === TableSchema::CONSTRAINT_FOREIGN) {
-                if ($this->_driver->autoQuoting()) {
+                if ($this->_driver->isAutoQuotingEnabled()) {
                     $tableName = $this->_driver->quoteIdentifier($table->name());
                 } else {
                     $tableName = $table->name();
@@ -485,9 +485,9 @@ class OracleSchema extends BaseSchema
         $sql = [];
 
         foreach ($table->constraints() as $name) {
-            $constraint = $table->constraint($name);
+            $constraint = $table->getConstraint($name);
             if ($constraint['type'] === TableSchema::CONSTRAINT_FOREIGN) {
-                if ($this->_driver->autoQuoting()) {
+                if ($this->_driver->isAutoQuotingEnabled()) {
                     $tableName = $this->_driver->quoteIdentifier($table->name());
                     $constraintName = $this->_driver->quoteIdentifier($name);
                 } else {

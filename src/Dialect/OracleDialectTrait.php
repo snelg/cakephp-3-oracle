@@ -62,7 +62,7 @@ trait OracleDialectTrait
             return $query;
         }
 
-        $newQuery = $query->connection()->newQuery();
+        $newQuery = $query->getConnection()->newQuery();
         $cols = $v->columns();
         $placeholder = 0;
         $replaceQuery = false;
@@ -87,7 +87,7 @@ trait OracleDialectTrait
                 continue;
             }
 
-            $q = $newQuery->connection()->newQuery();
+            $q = $newQuery->getConnection()->newQuery();
             $newQuery->unionAll($q->select($select)->from('DUAL'));
         }
 
