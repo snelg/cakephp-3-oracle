@@ -116,7 +116,9 @@ class OracleSchema extends BaseSchema
                 $field = ['type' => 'timestamp', 'length' => null];
                 break;
             case 'NUMBER':
-                if ($row['DATA_PRECISION'] == 1) {
+                if ($row['DATA_PRECISION'] == null) {
+                    $field = ['type' => 'decimal', 'length' => $row['DATA_LENGTH']];
+                } elseif ($row['DATA_PRECISION'] == 1) {
                     $field = ['type' => 'boolean', 'length' => null];
                 } else {
                     if ($row['DATA_SCALE'] > 0) {
