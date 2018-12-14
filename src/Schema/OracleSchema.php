@@ -116,15 +116,13 @@ class OracleSchema extends BaseSchema
                 $field = ['type' => 'timestamp', 'length' => null];
                 break;
             case 'NUMBER':
-                if ($row['DATA_PRECISION'] == null) {
-                    $field = ['type' => 'decimal', 'length' => $row['DATA_LENGTH']];
-                } elseif ($row['DATA_PRECISION'] == 1) {
+                if ($row['DATA_PRECISION'] == 1) {
                     $field = ['type' => 'boolean', 'length' => null];
                 } else {
-                    if ($row['DATA_SCALE'] > 0) {
+                    if ($row['DATA_PRECISION'] == null || $row['DATA_SCALE'] != 0) {
                         $field = ['type' => 'decimal', 'length' => $row['DATA_PRECISION'], 'precision' => $row['DATA_SCALE']];
                     } else {
-                        $field = ['type' => 'integer', 'length' => $row['DATA_PRECISION']];
+                        $field = ['type' => 'integer', 'length' => $row['DATA_PRECISION'], 'precision' => $row['DATA_SCALE']];
                     }
                 }
                 break;
@@ -295,7 +293,8 @@ class OracleSchema extends BaseSchema
         if (in_array($data['type'], $hasPrecision, true) &&
             (isset($data['length']) || isset($data['precision']))
         ) {
-            $out .= '(' . (int)$data['length'] . ',' . (int)$data['precision'] . ')';
+            $length = empty($data['length']) ? '*' : (int)$data['length'];
+            $out .= '(' . $length . ',' . (int)$data['precision'] . ')';
         }
 
         if (isset($data['null']) && $data['null'] === false) {
