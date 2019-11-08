@@ -4,7 +4,7 @@
     "description": "Oracle datasource for CakePHP 3",
     "license": "MIT",
     "require": {
-        "cakephp/cakephp": "~3.5",
+        "cakephp/cakephp": "~3.6",
         "ext-oci8": "*",
         "yajra/laravel-pdo-via-oci8": "~1.0"
     },
