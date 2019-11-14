@@ -19,6 +19,7 @@
  */
 namespace Cake\Oracle\Dialect;
 
+use Cake\Database\Expression\ValuesExpression;
 use Cake\Database\SqlDialectTrait;
 use Cake\Oracle\OracleCompiler;
 
@@ -57,17 +58,18 @@ trait OracleDialectTrait
      */
     protected function _insertQueryTranslator($query)
     {
+        /* @var ValuesExpression $v */
         $v = $query->clause('values');
-        if (count($v->values()) === 1 || $v->query()) {
+        if (count($v->getValues()) === 1 || $v->getQuery()) {
             return $query;
         }
 
         $newQuery = $query->getConnection()->newQuery();
-        $cols = $v->columns();
+        $cols = $v->getColumns();
         $placeholder = 0;
         $replaceQuery = false;
 
-        foreach ($v->values() as $k => $val) {
+        foreach ($v->getValues() as $k => $val) {
             $fillLength = count($cols) - count($val);
             if ($fillLength > 0) {
                 $val = array_merge($val, array_fill(0, $fillLength, null));
@@ -92,7 +94,7 @@ trait OracleDialectTrait
         }
 
         if ($replaceQuery) {
-            $v->query($newQuery);
+            $v->setQuery($newQuery);
         }
 
         return $query;

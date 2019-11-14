@@ -100,7 +100,7 @@ class Oracle extends Driver
 
         if (!empty($config['init'])) {
             foreach ((array)$config['init'] as $command) {
-                $this->getconnection()->exec($command);
+                $this->getConnection()->exec($command);
             }
         }
         return true;
